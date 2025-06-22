@@ -1,0 +1,34 @@
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+import openai
+import os
+
+app = Flask(__name__)
+CORS(app)
+
+openai.api_key = os.getenv("OPENAI_API_KEY")
+
+@app.route("/")
+def home():
+    return "✅ ClinicZed AI Backend is Running!"
+
+@app.route("/ask", methods=["POST"])
+def ask():
+    data = request.get_json()
+    question = data.get("question", "")
+    if not question:
+        return jsonify({"error": "No question received"}), 400
+
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": question}],
+            temperature=0.7,
+            max_tokens=300
+        )
+        return jsonify({"answer": response.choices[0].message["content"]})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8080)
